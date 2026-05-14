@@ -224,7 +224,7 @@ router.post('/myevents', auth, async (req, res) => {
     }
 
     // Also create an Event document so reminders can reference it
-    const eventDoc = await Event.create({
+    /*const eventDoc = await Event.create({
       title,
       description,
       eventDate: eventDateTime || (date ? new Date(date) : undefined),
@@ -232,6 +232,7 @@ router.post('/myevents', auth, async (req, res) => {
       location,
       createdBy: user._id
     });
+    */
 
     // If reminder selected, compute remindAt and create Reminder document
     if (reminder && reminder !== 'No reminder') {
@@ -257,8 +258,6 @@ router.post('/myevents', auth, async (req, res) => {
       const createdReminder = await Reminder.create({
 
         user: user._id,
-
-        event: eventDoc._id,
 
         email: user.email,
 
