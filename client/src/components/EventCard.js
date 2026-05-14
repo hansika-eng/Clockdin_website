@@ -98,7 +98,7 @@ const EventCard = ({ event, onBookmark, isBookmarked, showBookmark = false, onCl
             body: JSON.stringify({
               eventId: event._id || event.id,
               eventData: event, 
-              email: user.email || "2410080062@klh.edu.in",})
+              email: user?.email,})
           });
         } else {
           await apiFetch(`/api/users/notifications/subscribe/${event._id}`, {
