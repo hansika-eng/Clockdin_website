@@ -15,17 +15,8 @@ const CLIENT_URL = (process.env.CLIENT_URL || 'https://clockdin000007.vercel.app
 const FALLBACK_CLIENT_URL = 'https://clockdin000007.vercel.app';
 const LOCAL_CLIENT_URL = 'http://localhost:3000';
 const allowedOrigins = new Set([CLIENT_URL, FALLBACK_CLIENT_URL, LOCAL_CLIENT_URL]);
-const corsOptions = {
-  origin: (origin, callback) => {
-    if (!origin || allowedOrigins.has(origin)) {
-      callback(null, true);
-    } else {
-      callback(null, false);
-    }
-  },
-  credentials: true,
-};
 const app = express();
+
 app.use(cors({
   origin: [
     'http://localhost:3000',
