@@ -390,28 +390,7 @@ useEffect(() => {
   };
 
   // Notify me -> backend registers notification + schedules email
-  const _handleNotifyMe = async (event) => {
-    const token = localStorage.getItem('clockdin_token');
-    if (!token) {
-      alert('Sign in to receive notifications by email.');
-      return;
-    }
-    try {
-      const res = await axios.post(`/api/events/${encodeURIComponent(event._id || event.title)}/notify`, {}, {
-        headers: { 'x-auth-token': token }
-      });
-      if (res.data && res.data.success) {
-        alert('You will receive an email and this will appear in Notifications.');
-        // navigate to notifications page or update UI:
-        window.location.href = '/notifications';
-      } else {
-        alert('Failed to register notification.');
-      }
-    } catch (err) {
-      console.error('notify error', err?.response?.data || err.message);
-      alert('Failed to register notification. See console for details.');
-    }
-  };
+
 
   return (
     <div className="container-fluid mt-4">
