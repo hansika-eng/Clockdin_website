@@ -390,7 +390,7 @@ useEffect(() => {
   };
 
   // Notify me -> backend registers notification + schedules email
-  const handleNotifyMe = async (event) => {
+  const _handleNotifyMe = async (event) => {
     const token = localStorage.getItem('clockdin_token');
     if (!token) {
       alert('Sign in to receive notifications by email.');
