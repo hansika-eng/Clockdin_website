@@ -32,19 +32,19 @@ router.post('/subscribe', async (req, res) => {
   try {
 
     console.log("BODY:", req.body);
-
     const { eventId, eventData, email } = req.body;
 
-    const newReminder = new Reminder({
-    user: "681111111111111111111111",
-    event: String(eventId),
-    email: email,
-    remindAt: new Date(eventData.deadline),
-    sent: false,
+    console.log("EMAIL RECEIVED:", email);
+    
 
-      // ADD THIS
-      eventData: eventData
-    });
+    const newReminder = new Reminder({
+  user: null,
+  event: String(eventId),
+  email: email,
+  remindAt: new Date(eventData.deadline),
+  sent: false,
+  eventData: eventData
+});
 
     await newReminder.save();
 
