@@ -1,4 +1,3 @@
-
 const express = require('express');
 const bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken');
@@ -27,13 +26,17 @@ const profileFields = [
 // Auth middleware
 const auth = (req, res, next) => {
   const token = req.header('x-auth-token');
-  if (!token) return res.status(401).json({ msg: 'No token, auth denied' });
+  if (!token) {
+    console.log('Auth failed: No token provided');
+    return res.status(401).json({ msg: 'No token, auth denied' });
+  }
   try {
     const decoded = jwt.verify(token, process.env.JWT_SECRET);
     req.user = decoded;
     next();
-  } catch {
-    res.status(401).json({ msg: 'Token invalid' });
+  } catch (err) {
+    console.error('Auth failed: Token verification error', err.message);
+    res.status(401).json({ msg: 'Token invalid', error: err.message });
   }
 };
 
@@ -98,18 +101,88 @@ router.get('/notifications/subscriptions', auth, async (req, res) => {
 });
 
 router.post('/notifications/subscribe', auth, async (req, res) => {
+
   const { eventId } = req.body;
-  if (!eventId) return res.status(400).json({ msg: 'Event ID required' });
+
+  if (!eventId) {
+    return res.status(400).json({ msg: 'Event ID required' });
+  }
+
   try {
+
+    // Save notification subscription
     await NotificationSubscription.findOneAndUpdate(
       { user: req.user.id, event: eventId },
       { $set: { sent: false } },
       { upsert: true, new: true }
     );
-    res.json({ subscribed: true, eventId });
+
+    // Find user
+    const user = await User.findById(req.user.id);
+
+    // Find event
+    const foundEvent = req.body.eventData;
+
+    // Create reminder 2 days before deadline
+    if (foundEvent && foundEvent.deadline) {
+
+      const reminderDate = new Date(foundEvent.deadline);
+
+      reminderDate.setDate(reminderDate.getDate() - 2);
+
+      const existingReminder = await Reminder.findOne({
+        user: user._id,
+        event: String(foundEvent._id || foundEvent.id)
+      });
+
+      // Avoid duplicate reminders
+      if (!existingReminder) {
+
+        const createdReminder = await Reminder.create({
+          user: user._id,
+          event: String(foundEvent._id || foundEvent.id),
+          email: user.email,
+          remindAt: reminderDate
+        });
+
+        console.log('Reminder created:', createdReminder._id);
+
+        // Schedule exact reminder
+        try {
+
+          if (scheduler?.scheduleReminder) {
+            scheduler.scheduleReminder(createdReminder);
+          }
+
+        } catch (schedErr) {
+
+          console.error(
+            'Failed to schedule reminder:',
+            schedErr.message
+          );
+
+        }
+
+      }
+
+    }
+
+    res.json({
+      subscribed: true,
+      eventId
+    });
+
   } catch (err) {
-    res.status(500).json({ msg: 'Server error', error: err.message });
+
+    console.error(err);
+
+    res.status(500).json({
+      msg: 'Server error',
+      error: err.message
+    });
+
   }
+
 });
 
 router.delete('/notifications/subscribe/:eventId', auth, async (req, res) => {
@@ -182,10 +255,23 @@ router.post('/myevents', auth, async (req, res) => {
       }
 
       const createdReminder = await Reminder.create({
+
         user: user._id,
+
         event: eventDoc._id,
+
         email: user.email,
-        remindAt
+
+        remindAt,
+
+        sent: false,
+
+        eventData: {
+          title,
+          description,
+          location
+        }
+
       });
       console.log('Created reminder:', { id: createdReminder._id.toString(), email: createdReminder.email, remindAt: createdReminder.remindAt });
       // schedule the reminder to be sent at the exact time
@@ -259,26 +345,33 @@ router.post('/notifications/read', auth, async (req, res) => {
 
 // Profile: update
 router.put('/profile', auth, async (req, res) => {
-  const user = await User.findById(req.user.id);
-  if (req.body.name) user.name = req.body.name;
-  if (req.body.email) user.email = req.body.email;
-  if (Object.prototype.hasOwnProperty.call(req.body, 'avatar')) {
-    user.avatar = req.body.avatar;
-  }
-  const profileUpdates = {};
-  profileFields.forEach(field => {
-    if (req.body[field] !== undefined) {
-      profileUpdates[field] = req.body[field];
+  try {
+    const user = await User.findById(req.user.id);
+    if (!user) return res.status(404).json({ msg: 'User not found' });
+    
+    if (req.body.name) user.name = req.body.name;
+    if (req.body.email) user.email = req.body.email;
+    if (Object.prototype.hasOwnProperty.call(req.body, 'avatar')) {
+      user.avatar = req.body.avatar;
     }
-  });
-  user.profile = { ...user.profile, ...profileUpdates };
-  await user.save();
-  res.json({
-    name: user.name,
-    email: user.email,
-    avatar: user.avatar,
-    profile: user.profile,
-  });
+    const profileUpdates = {};
+    profileFields.forEach(field => {
+      if (req.body[field] !== undefined) {
+        profileUpdates[field] = req.body[field];
+      }
+    });
+    user.profile = { ...user.profile, ...profileUpdates };
+    await user.save();
+    res.json({
+      name: user.name,
+      email: user.email,
+      avatar: user.avatar,
+      profile: user.profile,
+    });
+  } catch (err) {
+    console.error('Profile update error:', err);
+    res.status(500).json({ msg: 'Server error updating profile', error: err.message });
+  }
 });
 
 // Fix all notification dates for all users

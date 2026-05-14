@@ -25,8 +25,14 @@ const Login = () => {
         }
       }
       const body = JSON.stringify(user);
-  const res = await apiAxios.post('/api/users/login', body, config);
+      const res = await apiAxios.post('/api/users/login', body, config);
       console.log(res.data);
+      // SAVE TOKEN
+      localStorage.setItem('clockdin_token', res.data.token);
+      // OPTIONAL LOGIN FLAG
+      localStorage.setItem('clockdin_signedin', 'true');
+      // REDIRECT
+      window.location.href = '/';
     } catch (err) {
       console.error(err.response.data);
     }

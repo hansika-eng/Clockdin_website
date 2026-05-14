@@ -14,6 +14,12 @@ const Landing = ({ onSignIn }) => {
   const [showPassword, setShowPassword] = useState(false);
   const [showRegPassword, setShowRegPassword] = useState(false);
   const [showRegConfirm, setShowRegConfirm] = useState(false);
+  const [stats, setStats] = useState({
+  activeEvents: 0,
+  thisWeek: 0,
+  students: 12000,
+  companies: 0
+});
 
   const resetRegister = useCallback(() => {
     setRegister(initialRegisterState);
@@ -53,7 +59,55 @@ const Landing = ({ onSignIn }) => {
       resetLoginState();
     };
   }, [resetLoginState]);
+  useEffect(() => {
 
+  const fetchStats = async () => {
+
+    try {
+
+      const res = await fetch('https://clockdin-backend-re7k.onrender.com/api/events');
+
+      const events = await res.json();
+
+      const now = new Date();
+
+      const nextWeek = new Date();
+      nextWeek.setDate(now.getDate() + 7);
+
+      const thisWeekEvents = events.filter(event => {
+
+        const eventDate = new Date(
+          event.eventDate || event.date
+        );
+
+        return eventDate >= now && eventDate <= nextWeek;
+
+      });
+
+      const uniqueCompanies = new Set(
+        events.map(
+          e => e.organizerName || e.organizer || 'Unknown'
+        )
+      );
+
+      setStats({
+        activeEvents: events.length,
+        thisWeek: thisWeekEvents.length,
+        students: 12000,
+        companies: uniqueCompanies.size
+      });
+
+    } catch (err) {
+
+      console.error('Stats fetch failed:', err);
+
+    }
+
+  };
+
+  fetchStats();
+
+}, []);
   const handleLogin = async e => {
     e.preventDefault();
     setLoading(true); setError('');
@@ -194,11 +248,11 @@ const Landing = ({ onSignIn }) => {
           {/* Stats Row */}
           <div className="d-flex justify-content-center gap-5 mt-5 mb-2 flex-wrap">
             <div className="text-center">
-              <div style={{fontWeight:800,fontSize:'1.5rem',color:'#6366f1'}}>156</div>
+              <div style={{fontWeight:800,fontSize:'1.5rem',color:'#6366f1'}}>{stats.activeEvents}</div>
               <div style={{color:'#64748b',fontSize:'1.01rem'}}>Active Events</div>
             </div>
             <div className="text-center">
-              <div style={{fontWeight:800,fontSize:'1.5rem',color:'#6366f1'}}>42</div>
+              <div style={{fontWeight:800,fontSize:'1.5rem',color:'#6366f1'}}>{stats.thisWeek}</div>
               <div style={{color:'#64748b',fontSize:'1.01rem'}}>This Week</div>
             </div>
             <div className="text-center">

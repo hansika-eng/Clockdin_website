@@ -23,8 +23,25 @@ async function sendReminder(reminder) {
     // Ensure populated event
     const rem = await Reminder.findById(reminder._id).populate('event');
     const to = rem.email;
-    const subject = `Event Reminder: ${rem.event?.title || 'Event'}`;
-    const text = `Hi! This is a reminder for the event "${rem.event?.title || ''}" happening on ${rem.event?.eventDate?.toLocaleString() || ''}.`;
+    const subject = `Clockdin Reminder: ${rem.eventData?.title || 'Event'}`;
+
+const text = `
+
+Clockdin Event Reminder
+
+Event:
+${rem.eventData?.title}
+
+Description:
+${rem.eventData?.description}
+
+Location:
+${rem.eventData?.location}
+
+Best Regards,
+Team Clockdin
+
+`;
     const info = await transporter.sendMail({ from: process.env.EMAIL_USER, to, subject, text });
     rem.sent = true;
     await rem.save();
@@ -144,9 +161,9 @@ function scheduleEventNotifications() {
 
 async function sendSubscriptionNotifications() {
   try {
-    const now = new Date();
-    const targetStart = new Date(now.getFullYear(), now.getMonth(), now.getDate() + 2, 0, 0, 0);
-    const targetEnd = new Date(now.getFullYear(), now.getMonth(), now.getDate() + 2, 23, 59, 59, 999);
+    const now = Date.now();
+    const TWO_DAYS = 2 * 24 * 60 * 60 * 1000; // 48 hours
+    const THRESHOLD = 2 * 60 * 1000; // 2 minutes tolerance to match scheduler interval
 
     const subs = await NotificationSubscription.find({ sent: false })
       .populate('event')
@@ -154,15 +171,22 @@ async function sendSubscriptionNotifications() {
 
     for (const sub of subs) {
       const deadline = sub.event?.deadline ? new Date(sub.event.deadline) : null;
-      if (!deadline) continue;
-      if (deadline >= targetStart && deadline <= targetEnd) {
+      if (!deadline || !sub.user?.email) continue;
+
+      const remaining = deadline.getTime() - now;
+      // Send when deadline is approximately 48 hours away within the tolerance window
+      if (remaining >= (TWO_DAYS - THRESHOLD) && remaining <= (TWO_DAYS + THRESHOLD)) {
         const to = sub.user.email;
         const subject = `Reminder: ${sub.event.title} deadline in 2 days`;
         const text = `Hi ${sub.user.name || ''},\n\nYou subscribed to be notified about "${sub.event.title}". The deadline is ${deadline.toDateString()}.\n\nGood luck!\nClockdin Team`;
-        await transporter.sendMail({ from: process.env.EMAIL_USER, to, subject, text });
-        sub.sent = true;
-        await sub.save();
-        console.log('Sent subscription notification', { sub: sub._id.toString(), event: sub.event.title, to });
+        try {
+          await transporter.sendMail({ from: process.env.EMAIL_USER, to, subject, text });
+          sub.sent = true;
+          await sub.save();
+          console.log('Sent subscription notification', { sub: sub._id.toString(), event: sub.event.title, to });
+        } catch (sendErr) {
+          console.error('Error sending subscription email for sub', sub._id.toString(), sendErr.message);
+        }
       }
     }
   } catch (err) {

@@ -197,6 +197,27 @@ const Bookmarks = () => {
     setCurrentPage(1);
   }, [search, category, level, mode, college, deadlineFilter, typeFilter, sortBy]);
 
+  // 🔹 NEW: Sync bookmarks with localStorage on changes
+  useEffect(() => {
+    const refresh = () => {
+      const { dataKey } = getBookmarkStorageKeys();
+      const data = localStorage.getItem(dataKey);
+      setBookmarks(data ? JSON.parse(data) : []);
+    };
+
+    const onStorage = (e) => {
+      // storage event fires for cross-window changes; we refresh when bookmark keys change
+      if (!e.key || e.key.includes('bookmark')) refresh();
+    };
+
+    window.addEventListener('storage', onStorage);
+    window.addEventListener('bookmarks-changed', refresh);
+    return () => {
+      window.removeEventListener('storage', onStorage);
+      window.removeEventListener('bookmarks-changed', refresh);
+    };
+  }, []);
+
   const handleUnbookmarkFromObj = (eventObj) => {
     const id = eventObj._id || eventObj.id || eventObj.title;
     const updated = bookmarks.filter(ev => (ev._id || ev.id || ev.title) !== id);

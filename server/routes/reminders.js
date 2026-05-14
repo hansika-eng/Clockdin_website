@@ -26,6 +26,46 @@ router.post('/', async (req, res) => {
     res.status(400).json({ error: err.message });
   }
 });
+// POST /api/reminders/subscribe
+router.post('/subscribe', async (req, res) => {
+
+  try {
+
+    console.log("BODY:", req.body);
+
+    const { eventId, eventData, email } = req.body;
+
+    const newReminder = new Reminder({
+    user: "681111111111111111111111",
+    event: String(eventId),
+    email: email,
+    remindAt: new Date(eventData.deadline),
+    sent: false,
+
+      // ADD THIS
+      eventData: eventData
+    });
+
+    await newReminder.save();
+
+    console.log("REMINDER SAVED");
+
+    res.json({
+      success: true,
+      reminder: newReminder
+    });
+
+  } catch (err) {
+
+    console.error(err);
+
+    res.status(500).json({
+      error: err.message
+    });
+
+  }
+
+});
 
 // POST /api/reminders/trigger - send any due reminders now
 router.post('/trigger', async (req, res) => {
@@ -47,7 +87,23 @@ router.post('/trigger', async (req, res) => {
             from: process.env.EMAIL_USER,
             to: reminder.email,
             subject: `Event Reminder: ${reminder.event?.title || 'Event'}`,
-            text: `Hi! This is a reminder for the event "${reminder.event?.title || ''}" happening on ${reminder.event?.eventDate?.toLocaleString() || ''}.`
+            text: `
+
+Clockdin Event Reminder
+
+Event:
+${reminder.eventData?.title}
+
+Description:
+${reminder.eventData?.description}
+
+Location:
+${reminder.eventData?.location}
+
+Best Regards,
+Team Clockdin
+
+`
           });
           reminder.sent = true;
           await reminder.save();

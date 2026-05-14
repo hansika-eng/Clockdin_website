@@ -1,4 +1,3 @@
-
 import React, { useEffect, useState } from 'react';
 import EventCard from './EventCard';
 import '../Events.css';
@@ -31,6 +30,9 @@ const Notifications = () => {
     };
   }, []);
 
+  const token = localStorage.getItem('clockdin_token');
+  const showSignInBanner = !token && notifiedEvents.length > 0;
+
   const removeNotifiedLocal = (eventId) => {
     const { idsKey, itemsKey } = getNotificationStorageKeys();
     const ids = JSON.parse(localStorage.getItem(idsKey) || '[]').filter(id => id !== eventId);
@@ -58,6 +60,11 @@ const Notifications = () => {
 
   return (
     <div className="container mt-4" style={{maxWidth:'1200px'}}>
+      {showSignInBanner && (
+        <div className="alert alert-warning" role="alert">
+          Sign in to receive email reminders 2 days before deadlines for these events. <a href="/login">Sign in</a>
+        </div>
+      )}
       <div className="d-flex align-items-center justify-content-between mb-4">
         <div>
           <h1 style={{fontWeight:900, fontSize:'2.4rem', color:'#22223b', marginBottom:4, letterSpacing:'-1px'}}>

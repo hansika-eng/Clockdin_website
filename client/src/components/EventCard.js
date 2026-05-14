@@ -80,6 +80,7 @@ const EventCard = ({ event, onBookmark, isBookmarked, showBookmark = false, onCl
     localStorage.setItem(itemsKey, JSON.stringify(updatedItems));
     window.dispatchEvent(new Event('notify-events-changed'));
   };
+  const user = JSON.parse(localStorage.getItem('user')) || {};
 
   const toggleNotify = async (e) => {
     e.stopPropagation();
@@ -90,10 +91,14 @@ const EventCard = ({ event, onBookmark, isBookmarked, showBookmark = false, onCl
     try {
       if (token) {
         if (targetState) {
-          await apiFetch('/api/users/notifications/subscribe', {
+          console.log("FRONTEND HIT");
+          await apiFetch('/api/reminders/subscribe', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json', 'x-auth-token': token },
-            body: JSON.stringify({ eventId: event._id })
+            body: JSON.stringify({
+              eventId: event._id || event.id,
+              eventData: event, 
+              email: user.email || "2410080062@klh.edu.in",})
           });
         } else {
           await apiFetch(`/api/users/notifications/subscribe/${event._id}`, {
@@ -101,9 +106,15 @@ const EventCard = ({ event, onBookmark, isBookmarked, showBookmark = false, onCl
             headers: { 'x-auth-token': token }
           });
         }
+        updateLocal(targetState); // keep UI in sync
+        setSubscribed(targetState);
+      } else {
+        // 🔹 Require sign-in so backend can send email reminders 2 days before deadline
+        alert('Sign in to receive email reminders 2 days before the deadline. Redirecting to sign in.');
+        window.location.href = '/login';
+        setLoadingNotify(false);
+        return;
       }
-      updateLocal(targetState);
-      setSubscribed(targetState);
     } catch (err) {
       console.error('Notify toggle failed', err);
     } finally {
