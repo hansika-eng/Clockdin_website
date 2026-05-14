@@ -26,7 +26,13 @@ const corsOptions = {
   credentials: true,
 };
 const app = express();
-app.use(cors(corsOptions));
+app.use(cors({
+  origin: [
+    'http://localhost:3000',
+    'https://clockdin-website.vercel.app'
+  ],
+  credentials: true
+}));
 app.use(express.json({ limit: '10mb' }));
 app.use(express.urlencoded({ limit: '10mb', extended: true }));
 // Connect to MongoDB
