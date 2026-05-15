@@ -10,6 +10,81 @@ const EventCard = ({ event, onBookmark, isBookmarked, showBookmark = false, onCl
   const shareWrapperRef = useRef(null);
   const copyTimerRef = useRef(null);
   const { idsKey, itemsKey } = getNotificationStorageKeys();
+  const baseUrl = typeof window !== 'undefined' ? window.location.origin : '';
+
+const rawEventIdentifier =
+  event._id || event.id || event.title || 'event';
+
+const encodedEventIdentifier =
+  encodeURIComponent(rawEventIdentifier);
+
+const shareLink =
+  `${baseUrl}/events?eventId=${encodedEventIdentifier}`;
+
+const encodedShareLink =
+  encodeURIComponent(shareLink);
+
+const encodedShareText =
+  encodeURIComponent(`${event.title} - ${shareLink}`);
+
+const copyTextToClipboard = async (text) => {
+
+  if (navigator.clipboard && navigator.clipboard.writeText) {
+    return navigator.clipboard.writeText(text);
+  }
+
+  const textarea = document.createElement('textarea');
+
+  textarea.value = text;
+  textarea.setAttribute('readonly', '');
+
+  textarea.style.position = 'absolute';
+  textarea.style.left = '-9999px';
+
+  document.body.appendChild(textarea);
+
+  textarea.select();
+
+  document.execCommand('copy');
+
+  document.body.removeChild(textarea);
+};
+
+const handleCopyLink = async (e) => {
+
+  e.stopPropagation();
+
+  try {
+
+    await copyTextToClipboard(shareLink);
+
+    setCopyMessage('Link copied');
+
+    if (copyTimerRef.current) {
+      clearTimeout(copyTimerRef.current);
+    }
+
+    copyTimerRef.current =
+      setTimeout(() => setCopyMessage(''), 2000);
+
+  } catch (err) {
+
+    console.error('Copy failed', err);
+
+    setCopyMessage('Copy failed');
+  }
+};
+
+const openShareUrl = (e, url) => {
+
+  e.stopPropagation();
+
+  if (!url) return;
+
+  window.open(url, '_blank', 'noopener,noreferrer');
+
+  setIsShareOpen(false);
+};
 
   useEffect(() => {
     const stored = JSON.parse(localStorage.getItem(idsKey) || '[]');
