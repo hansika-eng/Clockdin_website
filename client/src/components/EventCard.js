@@ -1,5 +1,4 @@
 import React, { useEffect, useRef, useState } from 'react';
-import { apiFetch } from '../utils/api';
 import { getNotificationStorageKeys } from '../utils/notificationStorage';
 
 const EventCard = ({ event, onBookmark, isBookmarked, showBookmark = false, onClick, showActions = true }) => {
@@ -80,7 +79,7 @@ const EventCard = ({ event, onBookmark, isBookmarked, showBookmark = false, onCl
     localStorage.setItem(itemsKey, JSON.stringify(updatedItems));
     window.dispatchEvent(new Event('notify-events-changed'));
   };
-  const user = JSON.parse(localStorage.getItem('user')) || {};
+  
 
   const toggleNotify = async (e) => {
   e.stopPropagation();
