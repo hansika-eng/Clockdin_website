@@ -83,44 +83,59 @@ const EventCard = ({ event, onBookmark, isBookmarked, showBookmark = false, onCl
   const user = JSON.parse(localStorage.getItem('user')) || {};
 
   const toggleNotify = async (e) => {
-    e.stopPropagation();
-    if (loadingNotify) return;
-    setLoadingNotify(true);
-    const token = localStorage.getItem('clockdin_token');
-    const targetState = !subscribed;
-    try {
-      if (token) {
-        if (targetState) {
-          console.log("FRONTEND HIT");
-          await apiFetch('/api/reminders/subscribe', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json', 'x-auth-token': token },
-            body: JSON.stringify({
-              eventId: event._id || event.id,
-              eventData: event, 
-              email: user?.email,})
-          });
-        } else {
-          await apiFetch(`/api/users/notifications/subscribe/${event._id}`, {
-            method: 'DELETE',
-            headers: { 'x-auth-token': token }
-          });
-        }
-        updateLocal(targetState); // keep UI in sync
-        setSubscribed(targetState);
-      } else {
-        // 🔹 Require sign-in so backend can send email reminders 2 days before deadline
-        alert('Sign in to receive email reminders 2 days before the deadline. Redirecting to sign in.');
-        window.location.href = '/login';
-        setLoadingNotify(false);
-        return;
+  e.stopPropagation();
+
+  if (loadingNotify) return;
+
+  setLoadingNotify(true);
+
+  const token = localStorage.getItem('clockdin_token');
+  const targetState = !subscribed;
+
+  try {
+
+    if (token) {
+
+      // SUBSCRIBE
+      if (targetState) {
+
+        updateLocal(true);
+        setSubscribed(true);
+
+        alert('Event added to Notifications.');
+
       }
-    } catch (err) {
-      console.error('Notify toggle failed', err);
-    } finally {
+
+      // UNSUBSCRIBE
+      else {
+
+        updateLocal(false);
+        setSubscribed(false);
+
+        alert('Event removed from Notifications.');
+
+      }
+
+    } else {
+
+      alert('Sign in to use Notifications.');
+      window.location.href = '/login';
+
       setLoadingNotify(false);
+      return;
+
     }
-  };
+
+  } catch (err) {
+
+    console.error('Notify toggle failed', err);
+
+  } finally {
+
+    setLoadingNotify(false);
+
+  }
+};
 
   const baseUrl = typeof window !== 'undefined' ? window.location.origin : '';
   const rawEventIdentifier = event._id || event.id || event.title || 'event';
