@@ -11,17 +11,16 @@ const Event = require('./models/event.model');
 const User = require('./models/user.model'); // Import User model
 
 const reminders = require('./routes/reminders');
-const CLIENT_URL = (process.env.CLIENT_URL || 'https://clockdin000007.vercel.app').trim();
-const FALLBACK_CLIENT_URL = 'https://clockdin000007.vercel.app';
+const CLIENT_URL =
+(process.env.CLIENT_URL || 'https://clockdin-website.vercel.app').trim();
+const FALLBACK_CLIENT_URL =
+'https://clockdin-website.vercel.app';
 const LOCAL_CLIENT_URL = 'http://localhost:3000';
 const allowedOrigins = new Set([CLIENT_URL, FALLBACK_CLIENT_URL, LOCAL_CLIENT_URL]);
 const app = express();
 
 app.use(cors({
-  origin: [
-    'http://localhost:3000',
-    'https://clockdin-website.vercel.app'
-  ],
+  origin: [...allowedOrigins],
   credentials: true
 }));
 app.use(express.json({ limit: '10mb' }));
