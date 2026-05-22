@@ -80,7 +80,7 @@ cron.schedule('* * * * *', async () => {
 
       const diffMs = deadline - now;
 
-      const diffDays = Math.floor(
+      const diffDays = Math.ceil(
   diffMs / (1000 * 60 * 60 * 24)
 );
 console.log("EVENT:", event.title);
