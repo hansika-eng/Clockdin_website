@@ -23,7 +23,7 @@ const reminderSchema = new mongoose.Schema({
 
   reminderType: {
     type: String,
-    enum: ['2days', '1day', 'deadline'],
+    enum: ['2days', '1day', 'sameDay'],
     required: true
   },
 
