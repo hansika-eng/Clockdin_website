@@ -17,7 +17,7 @@ export const apiFetch = (path, options = {}) => {
 
 export const apiAxios = axios.create({
   baseURL: normalizedBase,
-  withCredentials: true,
+  withCredentials: false,
 });
 
 // Add auth token
