@@ -29,30 +29,62 @@ router.post('/', async (req, res) => {
 // POST /api/reminders/subscribe
 router.post('/subscribe', async (req, res) => {
 
+  console.log("SUBSCRIBE ROUTE HIT");
+
   try {
 
-    console.log("BODY:", req.body);
     const { eventId, eventData, email } = req.body;
 
-    console.log("EMAIL RECEIVED:", email);
-    
+    console.log("BODY:", req.body);
 
-    const newReminder = new Reminder({
-  user: null,
-  event: String(eventId),
-  email: email,
-  remindAt: new Date(eventData.deadline),
-  sent: false,
-  eventData: eventData
-});
+    if (!email) {
+      return res.status(400).json({
+        error: 'Email required'
+      });
+    }
 
-    await newReminder.save();
+    // avoid duplicate subscriptions
+    const existing = await Reminder.findOne({
+      event: eventId,
+      email
+    });
 
-    console.log("REMINDER SAVED");
+    if (existing) {
+      return res.json({
+        success: true,
+        message: 'Already subscribed'
+      });
+    }
+
+    // create 3 reminders
+
+    const reminders = [
+      {
+        event: eventId,
+        email,
+        eventData,
+        reminderType: '2days'
+      },
+      {
+        event: eventId,
+        email,
+        eventData,
+        reminderType: '1day'
+      },
+      {
+        event: eventId,
+        email,
+        eventData,
+        reminderType: 'deadline'
+      }
+    ];
+
+    await Reminder.insertMany(reminders);
+
+    console.log('3 reminders created');
 
     res.json({
-      success: true,
-      reminder: newReminder
+      success: true
     });
 
   } catch (err) {
@@ -66,6 +98,7 @@ router.post('/subscribe', async (req, res) => {
   }
 
 });
+    
 
 // POST /api/reminders/trigger - send any due reminders now
 router.post('/trigger', async (req, res) => {

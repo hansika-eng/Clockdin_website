@@ -1,17 +1,37 @@
 const mongoose = require('mongoose');
 
 const reminderSchema = new mongoose.Schema({
-  user: { type: mongoose.Schema.Types.ObjectId, ref: 'User', required: true },
+  user: {
+    type: mongoose.Schema.Types.ObjectId,
+    ref: 'User'
+  },
 
-  event: { type: mongoose.Schema.Types.ObjectId, ref: 'Event' },
+  event: {
+    type: mongoose.Schema.Types.ObjectId,
+    ref: 'Event'
+  },
 
-  email: { type: String, required: true },
+  email: {
+    type: String,
+    required: true
+  },
 
-  remindAt: { type: Date, required: true },
+  eventData: {
+    type: Object,
+    required: true
+  },
 
-  sent: { type: Boolean, default: false },
+  reminderType: {
+    type: String,
+    enum: ['2days', '1day', 'deadline'],
+    required: true
+  },
 
-  eventData: Object
-});
+  sent: {
+    type: Boolean,
+    default: false
+  }
+
+}, { timestamps: true });
 
 module.exports = mongoose.model('Reminder', reminderSchema);

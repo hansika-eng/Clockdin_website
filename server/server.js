@@ -60,152 +60,195 @@ const transporter = nodemailer.createTransport({
 
 cron.schedule('* * * * *', async () => {
 
-  const now = new Date();
-
-  console.log(`Cron job triggered at: ${now}`);
+  console.log('Running reminder cron');
 
   try {
 
     const reminders = await Reminder.find({
-  sent: false,
-  "eventData.deadline": { $exists: true }
-});
+      sent: false
+    });
 
-    console.log(`Reminders found: ${reminders.length}`);
+    const now = new Date();
 
     for (const reminder of reminders) {
 
       const event = reminder.eventData;
 
-      if (!event || !event.deadline) continue;
+      if (!event?.deadline) continue;
 
       const deadline = new Date(event.deadline);
 
       const diffMs = deadline - now;
 
-      const diffDays = Math.ceil(
-        diffMs / (1000 * 60 * 60 * 24)
-      );
+      const diffDays = Math.floor(
+  diffMs / (1000 * 60 * 60 * 24)
+);
+console.log("EVENT:", event.title);
+console.log("DIFF DAYS:", diffDays);
+console.log("NOW:", now);
+console.log("DEADLINE:", deadline);
 
-      // SEND ONLY:
-      // 2 days before
-      // 1 day before
-      // same day
+      let shouldSend = false;
 
-      if (![2, 1, 0].includes(diffDays)) {
-        continue;
+      if (
+        reminder.reminderType === '2days' &&
+        diffDays === 2
+      ) {
+        shouldSend = true;
       }
+
+      if (
+        reminder.reminderType === '1day' &&
+        diffDays === 1
+      ) {
+        shouldSend = true;
+      }
+
+      if (
+        reminder.reminderType === 'sameDay' &&
+        diffDays === 0
+      ) {
+        shouldSend = true;
+      }
+
+      if (!shouldSend) continue;
+
+      await transporter.sendMail({
+
+        from: process.env.EMAIL_USER,
+
+        to: reminder.email,
+
+        subject: `⏰ Clockdin Reminder: ${event.title}`,
+
+        html: `
+
+<div style="
+  font-family: Arial, sans-serif;
+  max-width: 650px;
+  margin: auto;
+  background: #ffffff;
+  padding: 25px;
+  border-radius: 12px;
+  border: 1px solid #e5e7eb;
+">
+
+  <h1 style="
+    color:#4F46E5;
+    font-size:36px;
+    margin-bottom:15px;
+  ">
+    <span style="color:black;">
+      Clockdin
+    </span>
+    Event Reminder
+  </h1>
+
+  <hr style="
+    border:none;
+    border-top:1px solid #d1d5db;
+    margin-bottom:25px;
+  "/>
+
+  <h2 style="
+    font-size:34px;
+    color:#222;
+    margin-bottom:20px;
+  ">
+    ${event.title}
+  </h2>
+
+  <p style="
+    font-size:20px;
+    color:#444;
+    line-height:1.6;
+    margin-bottom:30px;
+  ">
+    ${event.description || 'No description available'}
+  </p>
+
+  <p style="font-size:18px;">
+    📅 <b>Event Date:</b>
+    ${new Date(event.eventDate).toDateString()}
+  </p>
+
+  <p style="font-size:18px;">
+    ⏳ <b>Deadline:</b>
+    ${new Date(event.deadline).toDateString()}
+  </p>
+
+  <p style="font-size:18px;">
+    📍 <b>Location:</b>
+    ${event.location || 'Not specified'}
+  </p>
+
+  <p style="font-size:18px;">
+    💻 <b>Mode:</b>
+    ${event.mode || 'N/A'}
+  </p>
+
+  <p style="font-size:18px;">
+    ⚡ <b>Difficulty:</b>
+    ${event.difficulty || 'N/A'}
+  </p>
+
+  <p style="font-size:18px;">
+    🏷️ <b>Tags:</b>
+    ${event.tags?.join(', ') || 'None'}
+  </p>
+
+  <br/>
+
+  <a
+    href="${event.applyLink}"
+    target="_blank"
+    style="
+      display:inline-block;
+      background:#4F46E5;
+      color:white;
+      text-decoration:none;
+      padding:14px 28px;
+      border-radius:10px;
+      font-size:18px;
+      font-weight:bold;
+    "
+  >
+    Apply Now
+  </a>
+
+  <br/><br/><br/>
+
+  <hr style="
+    border:none;
+    border-top:1px solid #d1d5db;
+    margin-top:20px;
+  "/>
+
+  <p style="
+    color:gray;
+    font-size:15px;
+    margin-top:20px;
+  ">
+    Sent by <b>Clockdin</b>
+  </p>
+
+</div>
+
+`
+      });
+
+      reminder.sent = true;
+
+      await reminder.save();
 
       console.log(
-        `Sending reminder for ${event.title} (${diffDays} day left)`
+        `Reminder sent to ${reminder.email}`
       );
-
-      try {
-
-        await transporter.sendMail({
-
-          from: process.env.EMAIL_USER,
-
-          to: reminder.email,
-
-          subject: `⏰ Clockdin Reminder: ${event.title}`,
-
-          html: `
-
-            <div style="font-family: Arial; padding: 20px;">
-
-              <h1 style="color:#4F46E5;">
-                Clockdin Event Reminder
-              </h1>
-
-              <hr/>
-
-              <h2>${event.title}</h2>
-
-              <p>
-                ${event.description}
-              </p>
-
-              <br/>
-
-              <p>
-                <b>📅 Event Date:</b>
-                ${new Date(event.eventDate).toDateString()}
-              </p>
-
-              <p>
-                <b>⏳ Deadline:</b>
-                ${deadline.toDateString()}
-              </p>
-
-              <p>
-                <b>📍 Location:</b>
-                ${event.location}
-              </p>
-
-              <p>
-                <b>💻 Mode:</b>
-                ${event.mode}
-              </p>
-
-              <p>
-                <b>⚡ Difficulty:</b>
-                ${event.difficulty}
-              </p>
-
-              <p>
-                <b>🏷️ Tags:</b>
-                ${event.tags.join(', ')}
-              </p>
-
-              <br/>
-
-              <a
-                href="${event.applyLink}"
-                style="
-                  background:#4F46E5;
-                  color:white;
-                  padding:12px 20px;
-                  text-decoration:none;
-                  border-radius:8px;
-                "
-              >
-                Apply Now
-              </a>
-
-              <br/><br/>
-
-              <hr/>
-
-              <p style="color:gray;">
-                Sent by Clockdin
-              </p>
-
-            </div>
-
-          `
-        });
-
-        console.log(
-          `Reminder sent to ${reminder.email}`
-        );
-        reminder.sent = true;
-        await reminder.save();
-        console.log("Reminder marked as sent");
-      } catch (err) {
-
-        console.error(
-          `Error sending reminder to ${reminder.email}:`,
-          err
-        );
-
-      }
-
     }
 
   } catch (err) {
 
-    console.error('Error finding reminders:', err);
+    console.error(err);
 
   }
 
