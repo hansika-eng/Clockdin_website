@@ -42,13 +42,20 @@ mongoose.connect(process.env.MONGO_URI, {
   .catch(err => console.error('MongoDB error:', err));
 // Setup nodemailer transporter (use your SMTP credentials)
 const transporter = nodemailer.createTransport({
-  service: 'gmail', // or your email provider
+  host: 'smtp.gmail.com',
+  port: 587,
+  secure: false,
   auth: {
-    user: process.env.EMAIL_USER, // set in .env
-    pass: process.env.EMAIL_PASS  // set in .env
-  }
+    user: process.env.EMAIL_USER,
+    pass: process.env.EMAIL_PASS
+  },
+  tls: {
+    rejectUnauthorized: false
+  },
+  connectionTimeout: 60000,
+  greetingTimeout: 30000,
+  socketTimeout: 60000
 });
-
 // Cron job: runs every 1 minute
 // =======================================
 // CLOCKDIN REMINDER CRON
