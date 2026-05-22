@@ -75,7 +75,7 @@ router.post('/subscribe', async (req, res) => {
         event: eventId,
         email,
         eventData,
-        reminderType: 'deadline'
+        reminderType: 'sameDay'
       }
     ];
 
