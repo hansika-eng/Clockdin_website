@@ -27,6 +27,90 @@ const Events = () => {
   const location = useLocation();
 
   const CARDS_PER_PAGE = 12; // 4 rows × 3 cards
+  function daysUntilDeadline(deadline) {
+  if (!deadline) return null;
+
+  const today = new Date();
+  today.setHours(0, 0, 0, 0);
+
+  const deadlineDate = new Date(deadline);
+  deadlineDate.setHours(0, 0, 0, 0);
+
+  const diff = deadlineDate - today;
+
+  return Math.ceil(diff / (1000 * 60 * 60 * 24));
+}
+
+const getDeadlineStyles = (deadline) => {
+  const days = daysUntilDeadline(deadline);
+
+  if (days === null) {
+    return {
+      bg: '#f3f4f6',
+      border: '#e5e7eb',
+      text: '#6b7280'
+    };
+  }
+
+  // expired
+  if (days < 0) {
+    return {
+      bg: '#f3f4f6',
+      border: '#d1d5db',
+      text: '#6b7280'
+    };
+  }
+
+  // today
+  if (days === 0) {
+    return {
+      bg: '#fed7aa',
+      border: '#fdba74',
+      text: '#d97706'
+    };
+  }
+
+  // urgent
+  if (days <= 3) {
+    return {
+      bg: '#fecaca',
+      border: '#fca5a5',
+      text: '#dc2626'
+    };
+  }
+
+  // soon
+  if (days <= 7) {
+    return {
+      bg: '#fef3c7',
+      border: '#fde68a',
+      text: '#d97706'
+    };
+  }
+
+  // upcoming
+  return {
+    bg: '#dbeafe',
+    border: '#bfdbfe',
+    text: '#0284c7'
+  };
+};
+
+const getDeadlineBadgeText = (deadline) => {
+  const days = daysUntilDeadline(deadline);
+
+  if (days === null) return 'No Deadline';
+
+  if (days < 0) return 'Expired';
+
+  if (days === 0) return 'Today';
+
+  if (days <= 3) return 'Urgent';
+
+  if (days <= 7) return 'Soon';
+
+  return 'Upcoming';
+};
 
 // FETCH EVENTS FROM DATABASE
 useEffect(() => {
@@ -625,15 +709,89 @@ useEffect(() => {
               <div className="row g-4" style={{marginBottom:'3rem'}}>
                 {paginatedEvents.map((event) => (
                   <div className="col-md-6 col-lg-4" key={event._id}>
-                    <div style={{position:'relative'}}>
-                      <EventCard
-                        event={event}
-                        onBookmark={handleBookmark}
-                        isBookmarked={bookmarkedIds.includes(event._id)}
-                        showBookmark={true}
-                        onClick={() => handleEventClick(event)}
-                      />
-                    </div>
+                    <div
+  style={{
+    position: 'relative',
+    borderRadius: '1rem',
+    overflow: 'hidden'
+  }}
+>
+  {(() => {
+    const styles = getDeadlineStyles(event.deadline);
+    const days = daysUntilDeadline(event.deadline);
+
+    return (
+      <div
+        style={{
+          border:
+            days !== null && days <= 7
+              ? `2px solid ${styles.border}`
+              : '1px solid #e5e7eb',
+          borderRadius: '1rem',
+          overflow: 'hidden',
+          background: '#fff'
+        }}
+      >
+        <EventCard
+          event={event}
+          onBookmark={handleBookmark}
+          isBookmarked={bookmarkedIds.includes(event._id)}
+          showBookmark={true}
+          onClick={() => handleEventClick(event)}
+        />
+
+        {/* STATUS SECTION */}
+        <div
+          style={{
+            background: styles.bg,
+            borderTop: `1px solid ${styles.border}`,
+            padding: '0.8rem 1rem'
+          }}
+        >
+          <div className="d-flex justify-content-between align-items-center">
+            <div>
+              <div
+                style={{
+                  fontWeight: 700,
+                  color: styles.text,
+                  fontSize: '0.9rem'
+                }}
+              >
+                {getDeadlineBadgeText(event.deadline)}
+              </div>
+
+              <div
+                style={{
+                  fontSize: '0.8rem',
+                  color: styles.text
+                }}
+              >
+                {days < 0
+                  ? `Expired ${Math.abs(days)} days ago`
+                  : days === 0
+                  ? 'Deadline is today'
+                  : `${days} day${days !== 1 ? 's' : ''} remaining`}
+              </div>
+            </div>
+
+            <span
+              style={{
+                background: styles.text,
+                color: '#fff',
+                padding: '0.35rem 0.7rem',
+                borderRadius: '0.5rem',
+                fontSize: '0.75rem',
+                fontWeight: 700
+              }}
+            >
+              {getDeadlineBadgeText(event.deadline)}
+            </span>
+          </div>
+        </div>
+      </div>
+    );
+  })()}
+</div>
                   </div>
                 ))}
               </div>

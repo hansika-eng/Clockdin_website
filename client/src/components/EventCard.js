@@ -158,6 +158,7 @@ const openShareUrl = (e, url) => {
   
 
   const toggleNotify = async (e) => {
+
   e.stopPropagation();
 
   if (loadingNotify) return;
@@ -165,32 +166,57 @@ const openShareUrl = (e, url) => {
   setLoadingNotify(true);
 
   const token = localStorage.getItem('clockdin_token');
+
+  const user =
+    JSON.parse(localStorage.getItem('clockdin_user'));
+
+  console.log("USER:", user);
+  console.log("EMAIL:", user?.email);
+
   const targetState = !subscribed;
 
   try {
 
     if (!token) {
+
       alert('Sign in to use Notifications.');
+
       window.location.href = '/login';
+
       return;
     }
 
     // SUBSCRIBE
     if (targetState) {
 
-      await apiFetch('/api/reminders/subscribe', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'x-auth-token': token
-        },
-        body: JSON.stringify({
-          eventId: event._id || event.id,
-          eventData: event
-        })
-      });
+      const response = await apiFetch(
+        '/api/reminders/subscribe',
+        {
+          method: 'POST',
+
+          headers: {
+            'Content-Type': 'application/json',
+            'x-auth-token': token
+          },
+
+          body: JSON.stringify({
+
+            eventId: event._id || event.id,
+
+            eventData: event,
+
+            email: user?.email
+
+          })
+        }
+      );
+
+      const data = await response.json();
+
+      console.log("BACKEND RESPONSE:", data);
 
       updateLocal(true);
+
       setSubscribed(true);
 
       alert('Event added to Notifications.');
@@ -200,14 +226,19 @@ const openShareUrl = (e, url) => {
     // UNSUBSCRIBE
     else {
 
-      await apiFetch(`/api/reminders/unsubscribe/${event._id}`, {
-        method: 'DELETE',
-        headers: {
-          'x-auth-token': token
+      await apiFetch(
+        `/api/reminders/unsubscribe/${event._id}`,
+        {
+          method: 'DELETE',
+
+          headers: {
+            'x-auth-token': token
+          }
         }
-      });
+      );
 
       updateLocal(false);
+
       setSubscribed(false);
 
       alert('Event removed from Notifications.');
@@ -223,6 +254,7 @@ const openShareUrl = (e, url) => {
     setLoadingNotify(false);
 
   }
+
 };
 
   return (
