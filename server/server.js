@@ -116,6 +116,10 @@ console.log("DEADLINE:", deadline);
       }
 
       if (!shouldSend) continue;
+      console.log("ABOUT TO SEND EMAIL");
+console.log("TO:", reminder.email);
+console.log("TYPE:", reminder.reminderType);
+
 
       await transporter.sendMail({
 
@@ -240,7 +244,7 @@ console.log("DEADLINE:", deadline);
 
 `
       });
-
+      console.log("EMAIL SENT SUCCESSFULLY");
       reminder.sent = true;
 
       await reminder.save();
