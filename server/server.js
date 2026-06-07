@@ -63,7 +63,7 @@ app.get("/test-email", async (req, res) => {
   try {
     const info = await transporter.sendMail({
       from: process.env.EMAIL_USER,
-      to: "YOUR_EMAIL@gmail.com", // replace with your email
+      to: "2410080062@klh.edu.in", // replace with your email
       subject: "Clockdin Test",
       text: "Brevo SMTP test"
     });
