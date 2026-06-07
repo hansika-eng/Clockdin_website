@@ -1,3 +1,4 @@
+const axios = require("axios");
 const express = require('express');
 const mongoose = require('mongoose');
 const cors = require('cors');
@@ -58,6 +59,23 @@ transporter.verify(function (error, success) {
     console.log("SMTP SERVER READY");
   }
 });
+app.get("/test-email", async (req, res) => {
+  try {
+    const info = await transporter.sendMail({
+      from: process.env.EMAIL_USER,
+      to: "YOUR_EMAIL@gmail.com", // replace with your email
+      subject: "Clockdin Test",
+      text: "Brevo SMTP test"
+    });
+
+    console.log(info);
+    res.send("Email sent");
+  } catch (err) {
+    console.error(err);
+    res.status(500).send(err.message);
+  }
+});
+
 // Cron job: runs every 1 minute
 // =======================================
 // CLOCKDIN REMINDER CRON
@@ -121,8 +139,8 @@ console.log("DEADLINE:", deadline);
 console.log("TO:", reminder.email);
 console.log("TYPE:", reminder.reminderType);
 
-
-      await transporter.sendMail({
+await transporter
+      .sendMail({
 
         from: process.env.EMAIL_USER,
 
