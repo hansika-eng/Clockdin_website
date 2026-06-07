@@ -50,6 +50,13 @@ const transporter = nodemailer.createTransport({
     pass: process.env.BREVO_SMTP_KEY,
   },
 });
+transporter.verify((error, success) => {
+  if (error) {
+    console.log("SMTP ERROR:", error);
+  } else {
+    console.log("SMTP READY");
+  }
+});
 // Cron job: runs every 1 minute
 // =======================================
 // CLOCKDIN REMINDER CRON
