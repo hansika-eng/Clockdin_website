@@ -43,8 +43,9 @@ mongoose.connect(process.env.MONGO_URI, {
 // Setup nodemailer transporter (use your SMTP credentials)
 const transporter = nodemailer.createTransport({
   host: "smtp-relay.brevo.com",
-  port: 587,
+  port: 2525,
   secure: false,
+  requireTLS: true,
   auth: {
     user: process.env.BREVO_EMAIL,
     pass: process.env.BREVO_SMTP_KEY,
